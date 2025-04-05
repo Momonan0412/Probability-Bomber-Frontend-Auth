@@ -19,8 +19,8 @@ class LoginForm extends Component {
           placeholder="Password"
         />
         <button onClick={this.props.onLogin}>Login</button>
-        <button onClick={() => this.props.onForgotPassword({ currentView: "forgot_password" })}>
-          Update Password
+        <button onClick={this.props.onForgotPassword}>
+          Forgot Password
         </button>
         {this.props.error && <p>Error: {this.props.error}</p>}
       </div>

@@ -1,20 +1,17 @@
 import React, {Component} from 'react';
-// In App.js or wherever you're calling signInWithEmailAndPassword
+import * as AuthController from './controllers/AuthController';
 
-import { auth } from "./firebaseConfig"; // ✅ Adjust if in different folder
-import { signInWithEmailAndPassword } from "firebase/auth"; // ✅ This stays from "firebase/auth"
+import ViewStates from './enums/ViewStates';
 
-import LoginForm from './forms/LoginForm';  // import LoginForm component
-import RegisterForm from './forms/RegisterForm';  // import RegisterForm component
-import Password from './forms/UpdatePasswordForm';  // import Password component
-import ForgotPassword from './forms/ForgotPasswordForm';  // import ForgotPassword component
-import Profile from './components/ProfileComponent';  // import Profile component
-import PasswordResetLink from './components/PasswordResetLinkComponent';  // import Profile component
+import LoginForm from './components/forms/LoginForm';  // import LoginForm component
+import RegisterForm from './components/forms/RegisterForm';  // import RegisterForm component
+import Password from './components/forms/UpdatePasswordForm';  // import Password component
+import ForgotPassword from './components/forms/ForgotPasswordForm';  // import ForgotPassword component
+import Profile from './components/views/ProfileComponent';  // import Profile component
+import PasswordResetLink from './components/views/PasswordResetLinkComponent';  // import Profile component
 
 import logo from './logo.svg';
 import './App.css';
-import axios from 'axios'
-import api from './api'; // Importing api from api.js
 
 class App extends Component {
   constructor(props) {
@@ -25,7 +22,7 @@ class App extends Component {
       password: '',
       error: null,
       userData: null,
-      currentView: 'login',  // Can be 'login', 'register', or 'profile'
+      currentView: ViewStates.LOGIN,  // Can be 'login', 'register', or 'profile'
     };
   }
 
@@ -33,139 +30,60 @@ class App extends Component {
     this.setState({ [e.target.name]: e.target.value });
   };
 
-  loginUser = async () => {
-    try {
-      const { email, password } = this.state;
+  handleLogin = () => AuthController.loginUser(this);
+  handleRegister = () => AuthController.registerUser(this);
+  handleForgotPassword = () => AuthController.forgotPassword(this);
+  handleUpdatePassword = () => AuthController.updatePassword(this);
 
-      // Step 1: Sign in with Firebase
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      
-      // Step 2: Get Firebase ID Token
-      const token = await user.getIdToken();
-
-      // Optional: Save token locally
-      localStorage.setItem("token", token);
-
-      const response = await api.post(`/auth/login/`,{
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-        
-      console.log("User Profile: ", response.data.userData.name);
-      console.log("User Profile: ", response.data.userData.email);
-      console.log("User Profile: ", response.data.userData.createdAt);
-
-      this.setState({
-        userData: response.data.userData, // Backend returns user data after token verification
-        currentView: "profile",
-      });
-
-    } catch (error) {
-      console.error("Login failed:", error.response ? error.response.data : error.message);
-      this.setState({ error: error.message });
-    }
-  }
-
-  registerUser = async () => {
-    try {
-      const data = await api.post(`/auth/register/`, {
-        name: this.state.userName,  // Use userName instead of name
-        email: this.state.email,
-        password: this.state.password,
-      });
-
-      console.log("Register successful:", data);
-      this.setState({ currentView: 'login' });  // Redirect to login after successful registration
-    } catch (error) {
-      console.error("Registration failed:", error.message);
-      this.setState({ error: error.message });
-    }
-  };
-
-  updatePassword = async () => {
-    try {
-      // const token = localStorage.getItem("token");
-      const data = await api.post(`/auth/reset_password/`, {
-        newPassword: this.state.password,        
-        // headers: {
-        //   Authorization: `Bearer ${token}`,
-        // },
-      })
-      console.log("Update Password Data: ", data)
-      this.setState({ currentView: 'login' }); 
-    } catch (error) {
-      console.error("Registration failed:", error.message);
-      this.setState({ error: error.message });
-    }
-  }
-
-  forgotPassword = async () => {
-    try {
-      console.log("Email Passed: ", this.state.email);
-      const data = await api.post(`/auth/forget_password/`, {
-        email: this.state.email
-      });
-      console.log(data.data.resetLink)
-      this.setState({
-        userData: data.data.resetLink, // Backend returns user data after token verification
-        currentView: "password_reset_link",
-      });
-    } catch (error) {
-      console.error("Registration failed:", error.message);
-      this.setState({ error: error.message });
-    }
-  }
   render() {
     const { userName, email, password, error, userData, currentView } = this.state;
 
     return (
       <div>
-        {currentView === 'login' && (
+        {currentView === ViewStates.LOGIN && (
           <LoginForm
             email={email}
             password={password}
             onChange={this.handleChange}
-            onLogin={this.loginUser}
-            onForgotPassword={(newState) => this.setState(newState)}
+            onLogin={this.handleLogin}
+            onForgotPassword={() => this.setState({ currentView: ViewStates.FORGOT_PASSWORD })}
             error={error}
           />
         )}
-        {currentView === 'register' && (
+        {currentView === ViewStates.REGISTER && (
           <RegisterForm
             userName={userName}      // Pass userName instead of name
             email={email}
             password={password}
             onChange={this.handleChange}
-            onRegister={this.registerUser}
+            onRegister={this.handleRegister}
             error={error}
           />
         )}
-        {currentView === 'profile' && (
+        {currentView === ViewStates.PROFILE && (
           <Profile 
           userData={userData}
-          onUpdatePassword={(newState) => this.setState(newState)} 
+          onUpdatePassword={() => this.setState({ currentView: ViewStates.PASSWORD })} 
           />
         )}
-        {currentView === 'password' && (
+        {currentView === ViewStates.PASSWORD && (
           <Password
             password={password}
             onChange={this.handleChange}
-            onUpdate={this.updatePassword}
+            onUpdate={this.handleUpdatePassword}
           />
         )}
-        {currentView === 'forgot_password' && (
+        {currentView === ViewStates.FORGOT_PASSWORD && (
             <ForgotPassword
             email={email}
             onChange={this.handleChange}
-            onForgotPassword={this.forgotPassword}
+            onForgotPassword={this.handleForgotPassword}
           />
         )}
-        {currentView === 'password_reset_link' && (
+        {currentView === ViewStates.PASSWORD_RESET_LINK && (
             <PasswordResetLink
             userData={userData}
-            onLogin={(newState) => this.setState(newState)}
+            onLogin={() => this.setState({ currentView: ViewStates.LOGIN })}
           />
         )}
       </div>

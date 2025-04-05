@@ -7,7 +7,7 @@ class PasswordResetLinkComponent extends Component {
           Reset Password Link
         </a>
         <br/>
-        <button onClick={() => this.props.onLogin({ currentView: "login" })}>
+        <button onClick={this.props.onLogin}>
         Login
         </button>
     </div>

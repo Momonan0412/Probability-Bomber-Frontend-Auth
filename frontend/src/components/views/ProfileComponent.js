@@ -11,7 +11,7 @@ class Profile extends Component {
     <p>Email: {this.props.userData.email}</p>
     <p>Name: {this.props.userData.name}</p>
     <p>Created At: {formattedDate}</p>
-    <button onClick={() => this.props.onUpdatePassword({ currentView: "password" })}>
+    <button onClick={this.props.onUpdatePassword}>
       Update Password
     </button>
   </div>
